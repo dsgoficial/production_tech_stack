@@ -1,0 +1,6 @@
+[submodule "auth_server"]
+	path = auth_server
+	url = https://github.com/1cgeo/auth_server.git
+[submodule "sap"]
+	path = sap
+	url = https://github.com/1cgeo/sap.git
