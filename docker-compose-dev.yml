@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  db:
+    image: postgis/postgis
+    container_name: postgis
+    volumes: 
+      - ./postgres_data:/var/lib/postgresql/data
+    environment:
+      # If you need to create multiple database you can add coma separated databases eg gis,data
+      - POSTGRES_DB=servico_autenticacao
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - ALLOW_IP_RANGE=0.0.0.0/0
+    networks:
+      - my_network
+    ports:
+      - "2222:5432"
+    expose:
+      - "5432"
+    restart: on-failure
+    healthcheck:
+      test: "exit 0"
+  auth:
+    build:
+      context: ./auth_server
+      dockerfile: Dockerfile.dev
+    command:
+      - /bin/bash
+      - -c
+      - node create_config.js --db-server=db --db-port=5432 --db-name=servico_autenticacao --db-user=postgres --db-password=postgres --port=3010 --no-db-create --auth-user=admin --auth-password=admin && npm run start-dev
+    container_name: auth_server
+    links:
+      - db
+    networks:
+      - my_network
+    ports:
+      - "3010:3010"
+    expose:
+      - "5432"
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  my_network:
