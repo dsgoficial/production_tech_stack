@@ -28,8 +28,10 @@ services:
     command:
       - /bin/bash
       - -c
-      - node create_config.js --db-server=db --db-port=5432 --db-name=servico_autenticacao --db-user=postgres --db-password=postgres --port=3010 --no-db-create --auth-user=admin --auth-password=admin && npm run start-dev
+      - node create_config.js --db-server=db --db-port=5432 --db-name=servico_autenticacao --db-user=postgres --db-password=postgres --port=3010 --no-db-create --auth-user=admin --auth-password=admin --overwrite-env && npm run start-dev
     container_name: auth_server
+    volumes:
+      - ./auth_server:/app
     links:
       - db
     networks:
@@ -39,8 +41,39 @@ services:
     expose:
       - "5432"
     restart: on-failure
+    healthcheck:
+      test: "exit 0"
     depends_on:
       db:
+        condition: service_healthy
+  sap:
+    build:
+      context: ./sap
+      dockerfile: Dockerfile.dev
+    command:
+      - /bin/bash
+      - -c
+      - node create_config.js --db-server=db --db-port=5432 --db-user=postgres --db-password=postgres --db-name=sap --port=3013 --auth-user=admin --auth-password=admin --auth-server-raw=http://auth:3010 --auth-user=admin --auth-password=admin --db-create --overwrite-env && npm run start-dev
+    container_name: sap
+    volumes:
+      - ./sap:/app
+    links:
+      - db
+      - auth
+    networks:
+      - my_network
+    ports:
+      - "3013:3013"
+    expose:
+      - "3010"
+      - "5432"
+    restart: on-failure
+    healthcheck:
+      test: "exit 0"
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
         condition: service_healthy
 
 networks:
